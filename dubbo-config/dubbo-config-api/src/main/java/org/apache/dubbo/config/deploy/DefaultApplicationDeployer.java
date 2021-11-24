@@ -184,6 +184,7 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
      */
     @Override
     public void initialize() {
+        // 如果已经初始化则直接返回
         if (initialized.get()) {
             return;
         }
@@ -192,20 +193,20 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
             if (initialized.get()) {
                 return;
             }
-            // register shutdown hook
+            // register shutdown hook 注册关闭钩子，jvm关闭时会调用
             registerShutdownHook();
-
+            // 启动配置中心
             startConfigCenter();
-
+            // 加载应用程序配置，如：spring boot中的yml配置文件
             loadApplicationConfigs();
-
+            // 初始化模块部署者
             initModuleDeployers();
 
-            // @since 2.7.8
+            // @since 2.7.8 启动元数据中心
             startMetadataCenter();
-
+            // 初始化元数据服务
             initMetadataService();
-
+            // 设置已经初始化标记
             initialized.set(true);
 
             if (logger.isInfoEnabled()) {
@@ -219,9 +220,10 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
     }
 
     private void initModuleDeployers() {
-        // make sure created default module
+        // make sure created default module 确保创建了默认模块
         applicationModel.getDefaultModule();
         // copy modules and initialize avoid ConcurrentModificationException if add new module
+        // 如果添加新模块，则复制模块并初始化避免并发修改异常
         List<ModuleModel> moduleModels = new ArrayList<>(applicationModel.getModuleModels());
         for (ModuleModel moduleModel : moduleModels) {
             moduleModel.getDeployer().initialize();
@@ -234,20 +236,21 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
 
     private void startConfigCenter() {
 
-        // load application config
+        // load application config 加载应用程序配置
         configManager.loadConfigsOfTypeFromProps(ApplicationConfig.class);
 
-        // try set model name
+        // try set model name 尝试设置模块名
         if (StringUtils.isBlank(applicationModel.getModelName())) {
             applicationModel.setModelName(applicationModel.tryGetApplicationName());
         }
 
-        // load config centers
+        // load config centers 加载配置中心
         configManager.loadConfigsOfTypeFromProps(ConfigCenterConfig.class);
 
+        // 如有必要，使用注册中心作为配置中心
         useRegistryAsConfigCenterIfNecessary();
 
-        // check Config Center
+        // check Config Center 检查配置中心
         Collection<ConfigCenterConfig> configCenters = configManager.getConfigCenters();
         if (CollectionUtils.isEmpty(configCenters)) {
             ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
@@ -280,7 +283,7 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
     }
 
     private void startMetadataCenter() {
-
+        //如有必要，使用注册中心作为元数据中心
         useRegistryAsMetadataCenterIfNecessary();
 
         ApplicationConfig applicationConfig = getApplication();
@@ -313,15 +316,16 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
      */
     private void useRegistryAsConfigCenterIfNecessary() {
         // we use the loading status of DynamicConfiguration to decide whether ConfigCenter has been initiated.
+        // 通过 DynamicConfiguration 的加载状态来判断 ConfigCenter 是否已经启动。
         if (environment.getDynamicConfiguration().isPresent()) {
             return;
         }
-
+        // 如果配置中心存在则不操作
         if (CollectionUtils.isNotEmpty(configManager.getConfigCenters())) {
             return;
         }
 
-        // load registry
+        // load registry 加载注册配置
         configManager.loadConfigsOfTypeFromProps(RegistryConfig.class);
 
         List<RegistryConfig> defaultRegistries = configManager.getDefaultRegistries();

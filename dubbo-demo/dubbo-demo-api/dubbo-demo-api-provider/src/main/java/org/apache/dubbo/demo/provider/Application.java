@@ -17,11 +17,7 @@
 package org.apache.dubbo.demo.provider;
 
 import org.apache.dubbo.common.constants.CommonConstants;
-import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.config.MetadataReportConfig;
-import org.apache.dubbo.config.RegistryConfig;
-import org.apache.dubbo.config.ServiceConfig;
-import org.apache.dubbo.config.ProtocolConfig;
+import org.apache.dubbo.config.*;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.demo.DemoService;
 
@@ -29,6 +25,7 @@ import java.util.concurrent.CountDownLatch;
 
 public class Application {
     public static void main(String[] args) throws Exception {
+        args = new String[]{"classic"};
         if (isClassic(args)) {
             startWithExport();
         } else {
@@ -41,26 +38,38 @@ public class Application {
     }
 
     private static void startWithBootstrap() {
+        // 服务配置,即暴露的接口
         ServiceConfig<DemoServiceImpl> service = new ServiceConfig<>();
         service.setInterface(DemoService.class);
         service.setRef(new DemoServiceImpl());
 
+        // dubbo引导程序
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))
-            .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
+            // 注册中心,此处使用zk
+            .registry(new RegistryConfig("zookeeper://192.168.31.116:2181"))
+            // 使用dubbo协议
             .protocol(new ProtocolConfig(CommonConstants.DUBBO, -1))
+            // 暴露的service服务
             .service(service)
+            // 启动
             .start()
+            // 阻塞等待
             .await();
     }
 
     private static void startWithExport() throws InterruptedException {
+        // 服务配置,即暴露的接口
         ServiceConfig<DemoServiceImpl> service = new ServiceConfig<>();
         service.setInterface(DemoService.class);
         service.setRef(new DemoServiceImpl());
+        // 服务名
         service.setApplication(new ApplicationConfig("dubbo-demo-api-provider"));
-        service.setRegistry(new RegistryConfig("zookeeper://127.0.0.1:2181"));
-        service.setMetadataReportConfig(new MetadataReportConfig("zookeeper://127.0.0.1:2181"));
+        // 注册中心地址
+        service.setRegistry(new RegistryConfig("zookeeper://192.168.31.116:2181"));
+        // 元数据配置地址
+        service.setMetadataReportConfig(new MetadataReportConfig("zookeeper://192.168.31.116:2181"));
+        // 发布服务
         service.export();
 
         System.out.println("dubbo service started");

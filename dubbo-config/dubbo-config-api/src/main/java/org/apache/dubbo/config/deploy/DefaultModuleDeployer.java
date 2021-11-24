@@ -128,17 +128,19 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
         }
 
         try {
+            // 如果是启动中或者启动后直接返回
             if (isStarting() || isStarted()) {
                 return startFuture;
             }
 
+            // 设置状态为启动中
             onModuleStarting();
 
-            // initialize
+            // initialize 初始化
             applicationDeployer.initialize();
             initialize();
 
-            // export services
+            // export services 发布服务
             exportServices();
 
             // prepare application instance

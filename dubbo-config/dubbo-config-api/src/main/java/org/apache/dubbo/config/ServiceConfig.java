@@ -19,6 +19,7 @@ package org.apache.dubbo.config;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.URLBuilder;
 import org.apache.dubbo.common.Version;
+import org.apache.dubbo.common.deploy.ModuleDeployer;
 import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
@@ -208,8 +209,10 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             return;
         }
 
-        // ensure start module, compatible with old api usage
-        getScopeModel().getDeployer().start();
+        // DefaultModuleDeployer
+        ModuleDeployer deployer = getScopeModel().getDeployer();
+        // 启动默认模块部署器
+        deployer.start();
 
         synchronized (this) {
             if (this.exported) {

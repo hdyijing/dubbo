@@ -40,22 +40,30 @@ public class Application {
     }
 
     private static void runWithBootstrap() {
+        // 调用方接口配置
         ReferenceConfig<DemoService> reference = new ReferenceConfig<>();
+        // 调用的接口
         reference.setInterface(DemoService.class);
+        // 通用序列化
         reference.setGeneric("true");
 
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
+        // 应用名
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-consumer"))
-            .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
+            // 注册中心地址
+            .registry(new RegistryConfig("zookeeper://192.168.31.116:2181"))
+            // 协议
             .protocol(new ProtocolConfig(CommonConstants.DUBBO, -1))
+            // 添加调用配置
             .reference(reference)
+            // 启动
             .start();
 
         DemoService demoService = bootstrap.getCache().get(reference);
         String message = demoService.sayHello("dubbo");
         System.out.println(message);
 
-        // generic invoke
+        // generic invoke 通用调用
         GenericService genericService = (GenericService) demoService;
         Object genericInvokeResult = genericService.$invoke("sayHello", new String[]{String.class.getName()},
             new Object[]{"dubbo generic invoke"});
@@ -63,12 +71,19 @@ public class Application {
     }
 
     private static void runWithRefer() {
+        // 调用方配置
         ReferenceConfig<DemoService> reference = new ReferenceConfig<>();
+        // 应用名
         reference.setApplication(new ApplicationConfig("dubbo-demo-api-consumer"));
-        reference.setRegistry(new RegistryConfig("zookeeper://127.0.0.1:2181"));
-        reference.setMetadataReportConfig(new MetadataReportConfig("zookeeper://127.0.0.1:2181"));
+        // 注册中心地址
+        reference.setRegistry(new RegistryConfig("zookeeper://192.168.31.116:2181"));
+        // 元数据配置地址
+        reference.setMetadataReportConfig(new MetadataReportConfig("zookeeper://192.168.31.116:2181"));
+        // 设置调用的接口
         reference.setInterface(DemoService.class);
+        // 获取接口代理类
         DemoService service = reference.get();
+        // 调用接口
         String message = service.sayHello("dubbo");
         System.out.println(message);
     }

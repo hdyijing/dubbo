@@ -114,6 +114,9 @@ public class ConfigCenterConfig extends AbstractConfig {
     public ConfigCenterConfig() {
     }
 
+    /**
+     * 检查默认值，如果未赋值则给一个默认值
+     */
     @Override
     protected void checkDefault() {
         super.checkDefault();

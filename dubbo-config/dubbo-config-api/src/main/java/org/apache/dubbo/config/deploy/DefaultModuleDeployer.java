@@ -100,14 +100,15 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
             if (initialized.get()) {
                 return;
             }
+            // 加载配置
             loadConfigs();
 
-            // read ModuleConfig
+            // read ModuleConfig 读取ModuleConfig中的配置
             ModuleConfig moduleConfig = moduleModel.getConfigManager().getModule().orElseThrow(() -> new IllegalStateException("Default module config is not initialized"));
             exportAsync = Boolean.TRUE.equals(moduleConfig.getExportAsync());
             referAsync = Boolean.TRUE.equals(moduleConfig.getReferAsync());
 
-            // start in background
+            // start in background 后台启动
             background = moduleConfig.getBackground();
             if (background == null) {
                 // compatible with old usages

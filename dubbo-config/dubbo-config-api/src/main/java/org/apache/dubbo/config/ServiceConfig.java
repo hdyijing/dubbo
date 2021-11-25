@@ -218,7 +218,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             if (this.exported) {
                 return;
             }
-
+            // 主要是进行dubbo属性覆盖
             if (!this.isRefreshed()) {
                 this.refresh();
             }

@@ -566,13 +566,17 @@ public abstract class AbstractConfig implements Serializable {
 
     /**
      * Dubbo config property override
+     * Dubbo 配置属性覆盖
      */
     public void refresh() {
+        // 设置已经刷新为true
         refreshed.set(true);
         try {
             // check and init before do refresh
+            // 在刷新之前检查和初始化,默认空实现
             preProcessRefresh();
 
+            // 获取环境变量
             Environment environment = getScopeModel().getModelEnvironment();
             List<Map<String, String>> configurationMaps = environment.getConfigurationMaps();
 
@@ -588,6 +592,7 @@ public abstract class AbstractConfig implements Serializable {
                 preferredPrefix = getPrefixes().get(0);
             }
             // Extract sub props (which key was starts with preferredPrefix)
+            // 根据 preferredPrefix 前缀获取子属性配置
             Collection<Map<String, String>> instanceConfigMaps = environment.getConfigurationMaps(this, preferredPrefix);
             Map<String, String> subProperties = ConfigurationUtils.getSubProperties(instanceConfigMaps, preferredPrefix);
             InmemoryConfiguration subPropsConfiguration = new InmemoryConfiguration(subProperties);
@@ -607,21 +612,24 @@ public abstract class AbstractConfig implements Serializable {
                     "], extracted props: " + subProperties);
             }
 
+            // 分配属性
             assignProperties(this, environment, subProperties, subPropsConfiguration);
 
             // process extra refresh of sub class, e.g. refresh method configs
+            // 处理额外的刷新
             processExtraRefresh(preferredPrefix, subPropsConfiguration);
 
         } catch (Exception e) {
             logger.error("Failed to override field value of config bean: " + this, e);
             throw new IllegalStateException("Failed to override field value of config bean: " + this, e);
         }
-
+        // 处理后置刷新
         postProcessRefresh();
     }
 
     private void assignProperties(Object obj, Environment environment, Map<String, String> properties, InmemoryConfiguration configuration) {
         // loop methods, get override value and set the new value back to method
+        // 循环方法，获取覆盖值并将新值设置回方法
         Method[] methods = obj.getClass().getMethods();
         for (Method method : methods) {
             if (MethodUtils.isSetter(method)) {

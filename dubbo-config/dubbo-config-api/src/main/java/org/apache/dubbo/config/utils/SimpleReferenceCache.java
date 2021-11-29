@@ -112,8 +112,10 @@ public class SimpleReferenceCache implements ReferenceCache {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T get(ReferenceConfigBase<T> rc) {
+        // 生成外部bean key
         String key = generator.generateKey(rc);
         Class<?> type = rc.getInterfaceClass();
+        // 获取远程调用代理类
         Object proxy = rc.get();
 
         references.computeIfAbsent(rc, _rc -> {

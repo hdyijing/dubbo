@@ -204,6 +204,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
 
             synchronized (this) {
                 if (ref == null) {
+                    // 初始化远程接口
                     init();
                 }
             }
@@ -262,7 +263,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
         repository.registerConsumer(consumerModel);
 
         serviceMetadata.getAttachments().putAll(referenceParameters);
-
+        // 创建代理类
         ref = createProxy(referenceParameters);
 
         serviceMetadata.setTarget(ref);
@@ -374,6 +375,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
                     aggregateUrlFromRegistry(referenceParameters);
                 }
             }
+            // 创建远程调用代理类
             createInvokerForRemote();
         }
 

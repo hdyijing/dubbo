@@ -167,7 +167,9 @@ public abstract class ReferenceConfigBase<T> extends AbstractReferenceConfig {
 
     /**
      * Get proxy interface class of this reference.
+     * 获取此引用的代理接口类。
      * The proxy interface class is used to create proxy instance.
+     * 代理接口类用于创建代理实例。
      * @return
      */
     public Class<?> getInterfaceClass() {

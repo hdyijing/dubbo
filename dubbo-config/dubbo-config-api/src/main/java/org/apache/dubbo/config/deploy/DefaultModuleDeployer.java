@@ -150,7 +150,7 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
                 applicationDeployer.prepareApplicationInstance();
             }
 
-            // refer services
+            // refer services 初始化远程调用代理类
             referServices();
 
             // if no async export/refer services, just set started
@@ -309,7 +309,9 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
     }
 
     private void exportServices() {
+        // 遍历ServiceConfig列表
         for (ServiceConfigBase sc : configManager.getServices()) {
+            // 发布内部服务
             exportServiceInternal(sc);
         }
     }
@@ -323,6 +325,7 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
             return;
         }
         if (exportAsync || sc.shouldExportAsync()) {
+            // 异步发布
             ExecutorService executor = executorRepository.getServiceExportExecutor();
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 try {
@@ -337,8 +340,10 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
 
             asyncExportingFutures.add(future);
         } else {
+            // 同步发布
             if (!sc.isExported()) {
                 sc.export();
+                // 服务添加到发布服务列表
                 exportedServices.add(sc);
             }
         }
@@ -364,6 +369,7 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
     }
 
     private void referServices() {
+        // 外部接口
         configManager.getReferences().forEach(rc -> {
             try {
                 ReferenceConfig<?> referenceConfig = (ReferenceConfig<?>) rc;
@@ -384,6 +390,7 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
 
                         asyncReferringFutures.add(future);
                     } else {
+                        // 初始化外包调用接口代理类
                         referenceCache.get(rc);
                     }
                 }

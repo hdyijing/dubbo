@@ -50,49 +50,20 @@ import org.apache.dubbo.rpc.service.GenericService;
 import org.apache.dubbo.rpc.support.ProtocolUtils;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.apache.dubbo.common.constants.CommonConstants.ANYHOST_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.ANY_VALUE;
-import static org.apache.dubbo.common.constants.CommonConstants.DUBBO;
-import static org.apache.dubbo.common.constants.CommonConstants.DUBBO_IP_TO_BIND;
-import static org.apache.dubbo.common.constants.CommonConstants.LOCALHOST_VALUE;
-import static org.apache.dubbo.common.constants.CommonConstants.METADATA_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.METHODS_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.MONITOR_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.PROVIDER_SIDE;
 import static org.apache.dubbo.common.constants.CommonConstants.REGISTER_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.REMOTE_METADATA_STORAGE_TYPE;
-import static org.apache.dubbo.common.constants.CommonConstants.REVISION_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.SERVICE_NAME_MAPPING_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.SIDE_KEY;
+import static org.apache.dubbo.common.constants.CommonConstants.*;
 import static org.apache.dubbo.common.constants.RegistryConstants.DYNAMIC_KEY;
 import static org.apache.dubbo.common.constants.RegistryConstants.SERVICE_REGISTRY_PROTOCOL;
-import static org.apache.dubbo.common.utils.NetUtils.getAvailablePort;
-import static org.apache.dubbo.common.utils.NetUtils.getLocalHost;
-import static org.apache.dubbo.common.utils.NetUtils.isInvalidLocalHost;
-import static org.apache.dubbo.common.utils.NetUtils.isInvalidPort;
-import static org.apache.dubbo.config.Constants.DUBBO_IP_TO_REGISTRY;
-import static org.apache.dubbo.config.Constants.DUBBO_PORT_TO_BIND;
-import static org.apache.dubbo.config.Constants.DUBBO_PORT_TO_REGISTRY;
-import static org.apache.dubbo.config.Constants.SCOPE_NONE;
+import static org.apache.dubbo.common.utils.NetUtils.*;
+import static org.apache.dubbo.config.Constants.*;
 import static org.apache.dubbo.remoting.Constants.BIND_IP_KEY;
 import static org.apache.dubbo.remoting.Constants.BIND_PORT_KEY;
 import static org.apache.dubbo.rpc.Constants.GENERIC_KEY;
-import static org.apache.dubbo.rpc.Constants.LOCAL_PROTOCOL;
-import static org.apache.dubbo.rpc.Constants.PROXY_KEY;
-import static org.apache.dubbo.rpc.Constants.SCOPE_KEY;
-import static org.apache.dubbo.rpc.Constants.SCOPE_LOCAL;
-import static org.apache.dubbo.rpc.Constants.SCOPE_REMOTE;
-import static org.apache.dubbo.rpc.Constants.TOKEN_KEY;
+import static org.apache.dubbo.rpc.Constants.*;
 import static org.apache.dubbo.rpc.cluster.Constants.EXPORT_KEY;
 
 public class ServiceConfig<T> extends ServiceConfigBase<T> {
@@ -190,6 +161,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
     /**
      * for early init serviceMetadata
+     * 初始化服务元数据
      */
     public void init() {
         if (this.initialized.compareAndSet(false, true)) {
@@ -197,6 +169,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             ExtensionLoader<ServiceListener> extensionLoader = this.getExtensionLoader(ServiceListener.class);
             this.serviceListeners.addAll(extensionLoader.getSupportedExtensionInstances());
         }
+        // 初始化服务元数据
         initServiceMetadata(provider);
         serviceMetadata.setServiceType(getInterfaceClass());
         serviceMetadata.setTarget(getRef());
@@ -220,14 +193,17 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             }
             // 主要是进行dubbo属性覆盖
             if (!this.isRefreshed()) {
+                // Dubbo 配置属性覆盖
                 this.refresh();
             }
             if (this.shouldExport()) {
+                // 初始化服务元数据
                 this.init();
 
                 if (shouldDelay()) {
                     doDelayExport();
                 } else {
+                    // 发布服务
                     doExport();
                 }
             }
@@ -273,7 +249,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
         // init some null configuration.
         List<ConfigInitializer> configInitializers = this.getExtensionLoader(ConfigInitializer.class)
-                .getActivateExtension(URL.valueOf("configInitializer://", getScopeModel()), (String[]) null);
+            .getActivateExtension(URL.valueOf("configInitializer://", getScopeModel()), (String[]) null);
         configInitializers.forEach(e -> e.initServiceConfig(this));
 
         // if protocol is not injvm checkRegistry
@@ -354,30 +330,36 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         if (StringUtils.isEmpty(path)) {
             path = interfaceName;
         }
+        // 发布urls
         doExportUrls();
+        // 发布服务
         exported();
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
+        // 模块服务存储库
         ModuleServiceRepository repository = getScopeModel().getServiceRepository();
+        // 注册服务到存储库
         ServiceDescriptor serviceDescriptor = repository.registerService(getInterfaceClass());
+        // 创建提供者模型
         providerModel = new ProviderModel(getUniqueServiceName(),
             ref,
             serviceDescriptor,
             this,
             getScopeModel(),
             serviceMetadata);
-
+        // 注册服务提供者到存储库
         repository.registerProvider(providerModel);
 
         List<URL> registryURLs = ConfigValidationUtils.loadRegistries(this, true);
 
         for (ProtocolConfig protocolConfig : protocols) {
             String pathKey = URL.buildKey(getContextPath(protocolConfig)
-                    .map(p -> p + "/" + path)
-                    .orElse(path), group, version);
+                .map(p -> p + "/" + path)
+                .orElse(path), group, version);
             // In case user specified path, register service one more time to map it to path.
+            // 如果用户指定路径，则再注册一次服务以将其映射到路径。
             repository.registerService(pathKey, interfaceClass);
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
@@ -542,12 +524,12 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
         // You can customize Configurator to append extra parameters
         if (this.getExtensionLoader(ConfiguratorFactory.class)
-                .hasExtension(url.getProtocol())) {
+            .hasExtension(url.getProtocol())) {
             url = this.getExtensionLoader(ConfiguratorFactory.class)
-                    .getExtension(url.getProtocol()).getConfigurator(url).configure(url);
+                .getExtension(url.getProtocol()).getConfigurator(url).configure(url);
         }
         url = url.setScopeModel(getScopeModel());
-        url =  url.setServiceModel(providerModel);
+        url = url.setServiceModel(providerModel);
         return url;
     }
 
@@ -639,10 +621,10 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
      */
     private void exportLocal(URL url) {
         URL local = URLBuilder.from(url)
-                .setProtocol(LOCAL_PROTOCOL)
-                .setHost(LOCALHOST_VALUE)
-                .setPort(0)
-                .build();
+            .setProtocol(LOCAL_PROTOCOL)
+            .setHost(LOCALHOST_VALUE)
+            .setPort(0)
+            .build();
         local = local.setScopeModel(getScopeModel())
             .setServiceModel(providerModel);
         doExportUrl(local, false);
@@ -656,7 +638,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
      */
     private boolean isOnlyInJvm() {
         return getProtocols().size() == 1
-                && LOCAL_PROTOCOL.equalsIgnoreCase(getProtocols().get(0).getName());
+            && LOCAL_PROTOCOL.equalsIgnoreCase(getProtocols().get(0).getName());
     }
 
 
@@ -802,7 +784,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
     private void postProcessConfig() {
         List<ConfigPostProcessor> configPostProcessors = this.getExtensionLoader(ConfigPostProcessor.class)
-                .getActivateExtension(URL.valueOf("configPostProcessor://", getScopeModel()), (String[]) null);
+            .getActivateExtension(URL.valueOf("configPostProcessor://", getScopeModel()), (String[]) null);
         configPostProcessors.forEach(component -> component.postProcessServiceConfig(this));
     }
 
